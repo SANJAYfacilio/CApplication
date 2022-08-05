@@ -1,12 +1,5 @@
 package org.example;
-//package java.sql;
-import com.mysql.cj.jdbc.PreparedStatementWrapper;
-import com.mysql.cj.protocol.Resultset;
-import java.util.Scanner;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.lang.*;
 import java.util.*;
 import java.sql.*;
 
@@ -14,40 +7,55 @@ public class Main {
     static Scanner inp = new Scanner(System.in);
     public static void main(String[] args)
     {
-        int ch;
+        int choice;
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/contact", "root", "19-Jun-02");
-            //Statement st = con.createStatement();
+            Statement st1 = conn.createStatement();
             System.out.println("LOGIN TO SHOW CONTACTS");
             System.out.println("PLEASE ENTER THE FOLLOWING DETAILS");
             System.out.println("USER NAME : ");
             String user = inp.nextLine();
-            //String user = getRequestString("username");
-            //String pass = getRequestString("user password");
 
             //inp.next();
             System.out.println("USER PASSWORD : ");
             String pass = inp.nextLine();
             int count=0;
-            String valid_query = "select * from login where user = ? and pas = ?;";
-            PreparedStatement st ;
-            st = conn.prepareStatement(valid_query);
-            st.setString(1,user);
-            st.setString(2,pass);
-            ResultSet rs_valid = st.executeQuery(valid_query);
+           String valid_query = "select * from login where user = '"+user+"' and pas = '"+pass+"';";
+            ResultSet rs_valid = st1.executeQuery(valid_query);
             while(rs_valid.next())
             {
                 count++;
             }
             if(count>0)
             {
-                Statement st1 = conn.createStatement();
+                //*****************SECOND TIME LOGIN*************************
+                System.out.println("### VERIFICATION ###");
+                System.out.println("PLEASE ENTER THE FOLLOWING DETAILS AGAIN");
+                System.out.println("USER NAME : ");
+                user = inp.nextLine();
+
+                //inp.next();
+                System.out.println("USER PASSWORD : ");
+                pass = inp.nextLine();
+                count=0;
+                valid_query = "select * from login where user = ? and pas = ? ;";
+                PreparedStatement stm ;
+                stm = conn.prepareStatement(valid_query);
+                stm.setString(1,user);
+                stm.setString(2,pass);
+                rs_valid = stm.executeQuery();
+                while(rs_valid.next())
+                {
+                    count++;
+                }
+                if(count>0)
+                {
             do{System.out.println("\n\nCHOOSE YOUR OPTION");
             System.out.println("1)SAVE NEW CONTACT\n2)DISPLAY CONTACTS\n3)UPDATE EXISITING CONTACT\n4)SEARCH FOR A CONTACT\n5)DELETE A CONTACT\n6)EXIT");
-            ch = inp.nextInt();
-            switch(ch) {
-                case 1:
+            choice = inp.nextInt();
+            switch(choice) {  //***********************   USER MENU
+                case 1: // ____________________ INSERT _________________
                     String cname, cmobile, cplace, cdob, cemail;
                     System.out.println("ENTER FOLLOWING DETAILS OF THE CONTACT");
                     System.out.println("NAME");
@@ -60,23 +68,31 @@ public class Main {
                     cdob = inp.next();
                     System.out.println("EMAIL ID");
                     cemail = inp.next();
-                    int cid = 0;
+                    int cid = 1;
+                    PreparedStatement ps;
                     ResultSet rs1 = st1.executeQuery("select * from details;");
                     while (rs1.next()) {
                         cid = rs1.getInt("contact_id");
-                    }
-                    String sql = "insert into details values('" + cname + "','" + cmobile + "','" + cplace + "','" + cdob + "','" + cemail + "'," + (cid + 1) + ");";
+                    }cid++;
+                    //String sql = "insert into details values('" + cname + "','" + cmobile + "','" + cplace + "','" + cdob + "','" + cemail + "'," + (cid + 1) + ");";
                     // Statement stmt = conn.createStatement();
-                    st.executeUpdate(sql);
+                    ps = conn.prepareStatement("insert into details values(?,?,?,?,?,?);");
+                    ps.setString(1,cname);
+                    ps.setString(2,cmobile);
+                    ps.setString(3,cplace);
+                    ps.setString(4,cdob);
+                    ps.setString(5,cemail);
+                    ps.setInt(6,cid);
+                    ps.executeUpdate();
                     break;
-                case 2:
+                case 2: // _________________________ SELECT ( DISPLAY ) _____________________
                     ResultSet rs = st1.executeQuery("select * from details;");
                     System.out.println("NAME\tMOBILE\t\tPLACE\tDATE OF BIRTH\tEMAIL ID");
                     while (rs.next()) {
                         System.out.println(rs.getString("name") + "\t" + rs.getString("Mobile") + "\t" + rs.getString("Place") + "\t" + rs.getString("DOB") + "\t" + rs.getString("email"));
                     }
                     break;
-                case 3:
+                case 3: //--------------- UPDATE -------------------
                     System.out.println("ENTER THE CONTACT ID TO BE MODIFIED");
                     int c_id = inp.nextInt();
                     ResultSet rs2 = st1.executeQuery("select * from details;");
@@ -89,7 +105,7 @@ public class Main {
                     System.out.println("\n1) NAME \n2) MOBILE NUMBER \n3)PLACE\n4)DATE OF BIRTH\n5)EMAIL ID");
                     int mod=inp.nextInt();
                     String update;
-                    switch (mod)
+                    switch (mod) // ---------- UPDATE MENU -------------------
                     {
                         case 1:
                             System.out.println("Enter the new name");
@@ -128,13 +144,13 @@ public class Main {
                             break;
                     }
                     break;
-                case 4:
+                case 4: // ------------------ SEARCH -----------
                     System.out.println("ENTER A FIELD TO BE SEARCHED");
                     String search = "Select * from details where ";
                     ResultSet rs_search;
                     System.out.println("\n1)SEARCH BY NAME\n2)SEARCH BY MOBILE\n3)SEARCH BY PLACE\n4)SEARCH BY MAIL ID\n5)SEARCH BY CONTACT ID");
                     int search_opt = inp.nextInt();
-                    switch (search_opt)
+                    switch (search_opt) //  ------------------- SEARCH MENU --------------
                     {
                         case 1:
                             System.out.println("ENTER THE NAME OF THE CONTACT");
@@ -179,7 +195,7 @@ public class Main {
 
                         }
                         break;
-                case 5:
+                case 5: // ----------------------- DELETE -----------------
                     System.out.println("TO DELETE A CONTACT ");
                     System.out.println("ENTER ANY ONE OPTION \n1) DELETE BY ENTERING NAME \n2) DELETE BY ENTERING CONTACT ID \n3) DELETE BY PLACE");
                     int del_opt = inp.nextInt();
@@ -196,7 +212,12 @@ public class Main {
                     }
 
 
-            }while(ch!=6);
+            }while(choice!=6);
+            }
+            else
+            {
+                System.out.println("SQL INJECTION");
+            }
             }
             else
             {
